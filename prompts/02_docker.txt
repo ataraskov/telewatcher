@@ -1,0 +1,4 @@
+1) add .gitignore;
+2) add config.yaml.example;
+3) wrap it into docker;
+4) prepare a github pipeline to build and publish docker image

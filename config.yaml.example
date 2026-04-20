@@ -1,0 +1,31 @@
+# Telegram API credentials
+# Obtain from https://core.telegram.org/api/obtaining_api_id
+api_id: 12345678
+api_hash: "your_api_hash_here"
+
+# Your phone number (used for login)
+phone: "+1234567890"
+
+# Chats/groups/channels to watch.
+# Use usernames (@example), invite links, or numeric IDs.
+watch:
+  - "@some_channel"
+  #- -1001234567890   # numeric chat ID (supergroups are negative)
+
+# Keywords to search for (case-insensitive)
+keywords:
+  - "keyword1"
+  - "keyword2"
+
+# Where to send Telegram notifications (optional).
+# Can be your own username (@me), a private chat ID, or another channel you own.
+#notify_chat: "@me"
+
+# Gotify push notifications (optional)
+#gotify:
+#  url: "https://gotify.example.com"
+#  token: "your_gotify_token"
+#  priority: 5
+
+# Optional: session file name (stores auth so you don't re-login every run)
+session_name: "telewatcher"
