@@ -1,6 +1,6 @@
 # telewatcher
 
-Monitors Telegram chats for keywords and forwards matches as notifications.
+Simple Telegram chats keywords monitoring.
 
 ## Features
 
