@@ -199,7 +199,9 @@ async def main():
     notify_chat_spec = cfg.get("notify_chat")
     session_name: str = str(config_dir / cfg.get("session_name", "telewatcher"))
 
-    gotify_cfg = cfg.get("gotify", {})
+    # `or {}` so a present-but-empty "gotify:" block in an existing config
+    # does not blow up on startup.
+    gotify_cfg = cfg.get("gotify") or {}
     gotify_url: str | None = gotify_cfg.get("url")
     gotify_token: str | None = gotify_cfg.get("token")
     gotify_priority: int = gotify_cfg.get("priority", 5)
