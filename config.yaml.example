@@ -26,6 +26,11 @@ keywords:
 #  url: "https://gotify.example.com"
 #  token: "your_gotify_token"
 #  priority: 5
+#  # How clients should render the message body.
+#  # "text/plain" (default) keeps links and @usernames verbatim.
+#  # "text/markdown" makes the link clickable; the message is escaped so
+#  # underscores in links and @usernames are not eaten as formatting.
+#  content_type: "text/plain"
 
 # Optional: session file name (stores auth so you don't re-login every run)
 session_name: "telewatcher"

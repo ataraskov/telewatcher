@@ -51,9 +51,21 @@ On first run you will be prompted to log in via your phone number. The session i
 | `gotify.url` | no | Gotify server URL |
 | `gotify.token` | no | Gotify app token |
 | `gotify.priority` | no | Notification priority (default: `5`) |
+| `gotify.content_type` | no | `text/plain` (default) or `text/markdown` — how Gotify clients render the body |
 | `session_name` | no | Session file name (default: `telewatcher`) |
 
 At least one of `notify_chat` or `gotify` must be configured.
+
+### Message formatting
+
+Notifications are sent without Markdown formatting, so links and `@usernames`
+keep their underscores (`https://t.me/serbska_baraholka/1711789`, not
+`https://t.me/serbskabaraholka/1711789`). Gotify messages carry an explicit
+`text/plain` content type so clients that default to Markdown leave them alone.
+
+Set `gotify.content_type: "text/markdown"` if you prefer a clickable link — the
+body is then escaped and line breaks are preserved, so nothing is swallowed by
+the renderer.
 
 ## Docker
 

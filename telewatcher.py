@@ -6,6 +6,7 @@ telewatcher — monitors Telegram chats for keywords matches.
 import asyncio
 import logging
 import os
+import re
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
@@ -50,6 +51,44 @@ def find_keywords(text: str, keywords: list[str]) -> list[str]:
     return [kw for kw in keywords if kw.lower() in lower]
 
 
+# Characters a Markdown renderer treats as formatting. Telegram usernames and
+# t.me links are full of underscores, which would otherwise be swallowed as
+# emphasis markers (@shkurko_roman -> @shkurkoroman).
+_MARKDOWN_SPECIALS = re.compile(r"([\\`*_{}\[\]()#+\-.!>|~])")
+
+PLAIN_CONTENT_TYPE = "text/plain"
+MARKDOWN_CONTENT_TYPE = "text/markdown"
+
+
+def escape_markdown(text: str) -> str:
+    """Backslash-escape characters that a Markdown renderer would eat."""
+    return _MARKDOWN_SPECIALS.sub(r"\\\1", text)
+
+
+def build_gotify_body(
+    keywords_str: str,
+    link: str | None,
+    text: str,
+    markdown: bool = False,
+) -> str:
+    """Compose the Gotify notification body for the configured content type."""
+    if not markdown:
+        parts = [f"Keywords: {keywords_str}"]
+        if link:
+            parts.append(f"Link: {link}")
+        parts.append(f"\n{text}")
+        return "\n".join(parts)
+
+    parts = [f"Keywords: {escape_markdown(keywords_str)}"]
+    if link:
+        # Inline link: the destination is not parsed for emphasis, so the
+        # underscores in the chat username survive.
+        parts.append(f"Link: [{escape_markdown(link)}]({link})")
+    # Two trailing spaces force hard line breaks, keeping the original layout.
+    parts.append("\n" + escape_markdown(text).replace("\n", "  \n"))
+    return "\n".join(parts)
+
+
 def chat_display_name(entity) -> str:
     if isinstance(entity, Channel):
         return f"{'Channel' if entity.broadcast else 'Group'} «{entity.title}»"
@@ -85,11 +124,16 @@ async def send_gotify(
     title: str,
     message: str,
     priority: int = 5,
+    content_type: str = PLAIN_CONTENT_TYPE,
     extras: dict | None = None,
 ) -> None:
     payload: dict = {"title": title, "message": message, "priority": priority}
-    if extras:
-        payload["extras"] = extras
+    # Always state the content type: clients that default to Markdown would
+    # otherwise mangle links and @usernames.
+    payload["extras"] = {
+        "client::display": {"contentType": content_type},
+        **(extras or {}),
+    }
     async with httpx.AsyncClient() as http:
         try:
             resp = await http.post(
@@ -159,6 +203,7 @@ async def main():
     gotify_url: str | None = gotify_cfg.get("url")
     gotify_token: str | None = gotify_cfg.get("token")
     gotify_priority: int = gotify_cfg.get("priority", 5)
+    gotify_content_type: str = gotify_cfg.get("content_type", PLAIN_CONTENT_TYPE)
 
     if not keywords:
         log.error("No keywords configured.")
@@ -168,6 +213,14 @@ async def main():
         sys.exit(1)
     if not notify_chat_spec and not (gotify_url and gotify_token):
         log.error("No notification target configured (notify_chat or gotify).")
+        sys.exit(1)
+    if gotify_content_type not in (PLAIN_CONTENT_TYPE, MARKDOWN_CONTENT_TYPE):
+        log.error(
+            "Invalid gotify.content_type %r (expected %r or %r).",
+            gotify_content_type,
+            PLAIN_CONTENT_TYPE,
+            MARKDOWN_CONTENT_TYPE,
+        )
         sys.exit(1)
 
     client = TelegramClient(session_name, api_id, api_hash)
@@ -224,17 +277,20 @@ async def main():
                 await client.forward_messages(notify_entity, event.message)
             except Exception as e:
                 log.warning("Could not forward message: %s", e)
-            await client.send_message(notify_entity, notification)
+            # parse_mode=None: Telethon parses Markdown by default, which
+            # would strip the underscores out of links and @usernames.
+            await client.send_message(notify_entity, notification, parse_mode=None)
 
         # Gotify push notification
         if gotify_url and gotify_token:
             keywords_str = ", ".join(matched)
             text_preview = (event.message.text or "")[:500]
-            gotify_body_parts = [f"Keywords: {keywords_str}"]
-            if link:
-                gotify_body_parts.append(f"Link: {link}")
-            gotify_body_parts.append(f"\n{text_preview}")
-            gotify_body = "\n".join(gotify_body_parts)
+            gotify_body = build_gotify_body(
+                keywords_str,
+                link,
+                text_preview,
+                markdown=gotify_content_type == MARKDOWN_CONTENT_TYPE,
+            )
 
             await send_gotify(
                 url=gotify_url,
@@ -242,6 +298,7 @@ async def main():
                 title=f"{keywords_str}",
                 message=gotify_body,
                 priority=gotify_priority,
+                content_type=gotify_content_type,
             )
 
     log.info("Listening for messages… (Ctrl+C to stop)")
