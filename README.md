@@ -79,3 +79,33 @@ docker run -d --restart unless-stopped \
 ```
 
 The session file is stored alongside the config so it persists across container restarts.
+
+### Prebuilt images
+
+Every push to `master` (or `main`) builds an image and publishes it to
+`ghcr.io/ataraskov/telewatcher`:
+
+```bash
+docker pull ghcr.io/ataraskov/telewatcher:latest
+```
+
+## Versioning
+
+Commits to `master`/`main` are versioned automatically: the workflow takes the
+newest `vMAJOR.MINOR.PATCH` tag, bumps the patch, and — once the image has been
+built and pushed — tags the commit with it. The first versioned commit becomes
+`v0.1.0`.
+
+Each build publishes the same image under several tags, e.g. for `v0.3.4`:
+
+| Tag | Moves |
+|-----|-------|
+| `0.3.4` | never — pin to this for reproducible deploys |
+| `0.3` | with each patch release |
+| `latest` | with each commit to the default branch |
+| `master` | with each commit to that branch |
+| `sha-1a2b3c4` | never — the exact commit |
+
+To bump the minor or major version, push the tag yourself
+(`git tag -a v0.4.0 -m "…" && git push origin v0.4.0`); the next automatic
+version continues from it.
