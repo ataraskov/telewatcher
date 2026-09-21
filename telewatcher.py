@@ -53,7 +53,7 @@ def find_keywords(text: str, keywords: list[str]) -> list[str]:
 
 # Characters a Markdown renderer treats as formatting. Telegram usernames and
 # t.me links are full of underscores, which would otherwise be swallowed as
-# emphasis markers (@shkurko_roman -> @shkurkoroman).
+# emphasis markers (@some_user -> @someuser).
 _MARKDOWN_SPECIALS = re.compile(r"([\\`*_{}\[\]()#+\-.!>|~])")
 
 PLAIN_CONTENT_TYPE = "text/plain"

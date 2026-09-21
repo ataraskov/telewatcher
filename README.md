@@ -59,8 +59,8 @@ At least one of `notify_chat` or `gotify` must be configured.
 ### Message formatting
 
 Notifications are sent without Markdown formatting, so links and `@usernames`
-keep their underscores (`https://t.me/serbska_baraholka/1711789`, not
-`https://t.me/serbskabaraholka/1711789`). Gotify messages carry an explicit
+keep their underscores (`https://t.me/some_chat/1711789`, not
+`https://t.me/somechat/1711789`). Gotify messages carry an explicit
 `text/plain` content type so clients that default to Markdown leave them alone.
 
 Set `gotify.content_type: "text/markdown"` if you prefer a clickable link — the
